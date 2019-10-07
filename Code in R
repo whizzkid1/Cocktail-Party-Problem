@@ -1,0 +1,68 @@
+m1<-load.wave("mike1.wav")
+m2<-load.wave("mike2.wav")
+m3<-load.wave("mike3.wav")
+
+x<-rbind(m1,m2,m3)
+
+x_t<-t(x)
+Cov<-cov(x_t)
+sqCov<-sqrtm(Cov)
+
+x_whitened<-solve(sqCov) %*% x 
+
+
+
+# Gradient Descent Algorithm
+gradient_ascent<-function(X){
+  
+  #initialization rule
+  w<-diag(3)
+  w_new<-diag(3)
+  
+  iterations<- vector(mode="numeric", length=0)
+  obj_func<- vector(mode="numeric", length=0)
+  iter<-1
+  
+  #Stopping criteria
+  while(norm(w_new - w,type  = "1") >  0.0001 || iter ==1)
+    {
+  #print("Norm value is")
+  #print(norm(w_new - w,type  = "1"))
+  
+  learn_rate<-10 /iter
+  
+  w<-w_new
+  
+  iterations[iter]<-iter
+  
+  #update rule
+  w_new <- w + learn_rate* (t(solve(w)) + (1/length(X[1,]) * (-1*tanh(w%*%X) %*% t(X))))
+  
+  
+  #Objective/Loss function
+  func <- log(det(w_new))*ncol(X) + sum(log(1/(pi*cosh(w_new%*%X)))) 
+    
+  obj_func[iter]<- func
+  iter<-iter+1
+  }
+  print("Number of iteration runs")
+  print(iter-1)
+  
+  plot(iterations,obj_func,main="Evolution of the Log-likelihood",
+       xlab="Iterations",
+       ylab="Objective function(Log - Likelihood)")
+  return(w_new)
+}
+
+w_hat<-gradient_ascent(x_whitened)
+y_hat<-w_hat%*%x_whitened
+
+y_hat[1,]<-y_hat[1,]/(2*max(y_hat[1,]))
+save.wave(y_hat[1,], where = "S1.wav")
+
+y_hat[2,]<-y_hat[2,]/(2*max(y_hat[2,]))
+save.wave(y_hat[2,], where = "S2.wav")
+
+y_hat[3,]<-y_hat[3,]/(2*max(y_hat[3,]))
+save.wave(y_hat[3,], where = "S3.wav")
+ 
